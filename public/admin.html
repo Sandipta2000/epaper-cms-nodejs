@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Barak Bani</title>
+    <link rel="stylesheet" href="style.css">
+    <link id="faviconLink" rel="icon" type="image/x-icon" href="">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+        header { background: #b30000; color: white; padding: 20px; text-align: center; }
+        nav { background: #333; padding: 10px; text-align: center; }
+        nav a { color: white; text-decoration: none; margin: 0 15px; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-close { float: right; cursor: pointer; font-size: 24px; color: #999; }
+        .modal-close:hover { color: #333; }
+        
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        button { padding: 10px 20px; background: #b30000; color: white; border: none; cursor: pointer; font-weight: bold; margin: 5px 5px 5px 0; border-radius: 4px; }
+        button:hover { background: #800000; }
+        button.secondary { background: #666; }
+        button.secondary:hover { background: #444; }
+        button.danger { background: #d32f2f; }
+        button.danger:hover { background: #b71c1c; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 16px; border-bottom: 3px solid transparent; color: black; }
+        .tab:hover { color: white; }
+        .tab.active { border-bottom-color: #b30000; color: white; background: #b30000; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        
+        .edition-card { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #b30000; }
+        .edition-card h3 { margin: 0 0 10px 0; }
+        .edition-card p { margin: 5px 0; color: #666; }
+        
+        .form-group { margin: 15px 0; }
+        .password-container { position: relative; display: flex; align-items: center; gap: 8px; }
+        .password-container input { margin: 10px 0 10px 0; flex: 1; }
+        .password-container button { position: relative; width: auto; padding: 8px 12px; margin: 0; top: auto; right: auto; cursor: pointer; border: 1px solid #ddd; background: white; font-size: 16px; }
+        
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .role-admin { background: #ffebee; color: #d32f2f; }
+        .role-editor { background: #e3f2fd; color: #1976d2; }
+        .role-author { background: #f3e5f5; color: #7b1fa2; }
+        
+        .user-info { background: #f5f5f5; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .user-info p { margin: 5px 0; }
+        
+        .status-msg { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status-success { background: #c8e6c9; color: #2e7d32; }
+        .status-error { background: #ffcdd2; color: #c62828; }
+    </style>
+</head>
+<body>
+
+<header>
+    <img id="siteLogo" src="logo.png" alt="Barak Bani Logo" style="height: 40px; margin-right: 15px; vertical-align: middle;">
+    Admin Control Panel - Barak Bani
+</header>
+<nav>
+    <a href="/">Home</a>
+    <a href="archive.html">Archive</a>
+</nav>
+
+<div id="loginSection" class="container">
+    <h2>Admin Login</h2>
+    <div class="form-group">
+        <label>Email:</label>
+        <input id="email" type="email" placeholder="Enter your email">
+    </div>
+    <div class="form-group">
+        <label>Password:</label>
+        <div class="password-container">
+            <input id="password" type="password" placeholder="Enter your password">
+            <button type="button" id="togglePassword" onclick="togglePasswordVisibility()">👁️</button>
+        </div>
+    </div>
+    <button onclick="login()" style="width: 100%;">Login</button>
+</div>
+
+<div id="dashboardSection" class="hidden">
+    <div class="container">
+        <div class="user-info">
+            <h3>Welcome, <span id="userName">User</span>!</h3>
+            <p>Role: <span class="role-badge" id="userRole"></span></p>
+            <p>Email: <span id="userEmail"></span></p>
+            <button onclick="logout()" class="secondary">Logout</button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('uploads')" data-tab="uploads">⬆️ Upload Edition</button>
+            <button class="tab" onclick="switchTab('editions')" data-tab="editions">📰 Manage Editions</button>
+            <button class="tab" id="usersTab" style="display:none;" onclick="switchTab('users')" data-tab="users">👥 Manage Users</button>
+            <button class="tab" id="brandingTab" style="display:none;" onclick="switchTab('branding')" data-tab="branding">🎨 Site Branding</button>
+        </div>
+        
+        <div id="uploads" class="tab-content active">
+            <h3>Upload New Epaper Edition</h3>
+            <div class="form-group">
+                <label>Edition Title:</label>
+                <input id="title" placeholder="e.g. Silchar Edition">
+            </div>
+            <div class="form-group">
+                <label>Publication Date:</label>
+                <input id="date" type="date">
+            </div>
+            <div class="form-group">
+                <label>Select PDF File:</label>
+                <input type="file" id="pdf" accept="application/pdf">
+            </div>
+            <button onclick="upload()" style="width: 100%;">Upload PDF</button>
+            <div id="uploadStatus"></div>
+        </div>
+        
+        <div id="editions" class="tab-content">
+            <h3>All Epaper Editions</h3>
+            <div id="editionsList"></div>
+        </div>
+        
+        <div id="users" class="tab-content">
+            <h3>Manage Users</h3>
+            <button onclick="showAddUserModal()">➕ Add New User</button>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div id="branding" class="tab-content">
+            <h3>Site Branding</h3>
+            <div class="form-group">
+                <h4>Site Logo</h4>
+                <div id="currentLogo">
+                    <p><strong>Current Logo:</strong> <span id="logoStatus">No logo uploaded</span></p>
+                    <img id="logoPreview" src="" alt="Current Logo" style="max-width: 200px; max-height: 100px; display: none; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                <label>Upload New Logo:</label>
+                <input type="file" id="logoFile" accept="image/*">
+                <button onclick="uploadLogo()" class="secondary">Upload Logo</button>
+                <button onclick="removeLogo()" class="danger" style="margin-left: 10px;">Remove Logo</button>
+                <div id="logoStatusMsg"></div>
+            </div>
+            
+            <div class="form-group">
+                <h4>Site Icon (Favicon)</h4>
+                <div id="currentFavicon">
+                    <p><strong>Current Favicon:</strong> <span id="faviconStatus">No favicon uploaded</span></p>
+                    <img id="faviconPreview" src="" alt="Current Favicon" style="max-width: 64px; max-height: 64px; display: none; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                <label>Upload New Favicon:</label>
+                <input type="file" id="faviconFile" accept="image/*">
+                <button onclick="uploadFavicon()" class="secondary">Upload Favicon</button>
+                <button onclick="removeFavicon()" class="danger" style="margin-left: 10px;">Remove Favicon</button>
+                <div id="faviconStatusMsg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding/editing users -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeUserModal()">&times;</span>
+        <h2 id="userModalTitle">Add New User</h2>
+        <div class="form-group">
+            <label>Full Name:</label>
+            <input id="modalUserName" placeholder="Enter full name">
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input id="modalUserEmail" type="email" placeholder="Enter email">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input id="modalUserPassword" type="password" placeholder="Enter password">
+        </div>
+        <div class="form-group">
+            <label>Role:</label>
+            <select id="modalUserRole">
+                <option value="author">Author (Upload only)</option>
+                <option value="editor">Editor (Upload, Edit, Delete)</option>
+                <option value="admin">Admin (Full Access)</option>
+            </select>
+        </div>
+        <button onclick="saveUser()" style="width: 100%;">Save User</button>
+    </div>
+</div>
+
+<!-- Modal for editing editions -->
+<div id="editionModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeEditionModal()">&times;</span>
+        <h2>Edit Edition</h2>
+        <div class="form-group">
+            <label>Title:</label>
+            <input id="modalEditionTitle" placeholder="Edition title">
+        </div>
+        <div class="form-group">
+            <label>Publication Date:</label>
+            <input id="modalEditionDate" type="date">
+        </div>
+        <button onclick="reconvertImages()" style="width: 48%;">Re-convert PDF to Images</button>
+        <button onclick="updateEdition()" style="width: 48%; float: right;">Update Edition</button>
+    </div>
+</div>
+
+<!-- Modal for area mapping -->
+<div id="areaMappingModal" class="modal">
+    <div class="modal-content" style="width: 95%; max-width: 1200px; height: 90vh;">
+        <span class="modal-close" onclick="closeAreaMappingModal()">&times;</span>
+        <h2>Area Mapping Tool</h2>
+        <div style="text-align: center;">
+            <div id="mappingViewer" style="position: relative; display: inline-block;">
+                <img id="mappingImage" style="display: block; max-width: 100%; max-height: 70vh;" />
+                <div id="areaOverlay" style="position: absolute; top: 0; left: 0; pointer-events: none;"></div>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+            <button onclick="prevMappingPage()" id="prevBtn">Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button onclick="nextMappingPage()" id="nextBtn">Next</button>
+            <button onclick="startDrawing()" id="drawBtn">Draw Area</button>
+            <button onclick="saveAreas()" style="float: right;">Save Areas</button>
+        </div>
+        <div id="areasList" style="margin-top: 10px; max-height: 100px; overflow-y: auto;"></div>
+    </div>
+</div>
+
+<script>
+let token = localStorage.getItem("adminToken") || "";
+let currentUser = null;
+let currentEditionId = null;
+let currentUserId = null;
+
+// Helper functions for date conversion
+function formatDateForDisplay(dateStr) {
+    // Convert DD/MM/YYYY to readable format
+    const [day, month, year] = dateStr.split('/');
+    const date = new Date(year, month - 1, day);
+    return date.toDateString();
+}
+
+function formatDateForInput(dateStr) {
+    // Convert DD/MM/YYYY to YYYY-MM-DD for date input
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+function login() {
+    console.log("Login button clicked");
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    console.log("Email:", email);
+    console.log("Password length:", password.length);
+    
+    if (!email || !password) {
+        alert('Please enter email and password');
+        return;
+    }
+    
+    console.log("Sending login request...");
+    fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json().then(data => ({status: res.status, body: data})))
+    .then(obj => {
+        console.log("Login response:", obj);
+        if (obj.status === 200 && obj.body.token) {
+            token = obj.body.token;
+            currentUser = obj.body.user;
+            localStorage.setItem("adminToken", token);
+            loadDashboard();
+        } else {
+            alert(obj.body.message || "Login failed");
+        }
+    })
+    .catch(err => {
+        console.error("Login error:", err);
+        alert("Login failed. Check server connection.");
+    });
+}
+
+function loadDashboard() {
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('dashboardSection').classList.remove('hidden');
+    
+    // Load user info
+    fetch('/user', {
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(user => {
+        currentUser = user;
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userEmail').textContent = user.email;
+        
+        const roleSpan = document.getElementById('userRole');
+        roleSpan.textContent = user.role.toUpperCase();
+        roleSpan.className = `role-badge role-${user.role}`;
+        
+        // Show users and branding tabs only for admin
+        if (user.role === 'admin') {
+            document.getElementById('usersTab').style.display = 'inline-block';
+            document.getElementById('brandingTab').style.display = 'inline-block';
+        }
+        
+        // Load editions
+        loadEditions();
+        
+        // Load users and branding if admin
+        if (user.role === 'admin') {
+            loadUsers();
+            loadBranding();
+        }
+    })
+    .catch(err => {
+        console.error('Error loading user:', err);
+        alert('Session expired. Please login again.');
+        logout();
+    });
+}
+
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById(tabName).classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    if (tabName === 'editions') {
+        loadEditions();
+    } else if (tabName === 'users') {
+        loadUsers();
+    }
+}
+
+function loadEditions() {
+    fetch('/editions', {
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(editions => {
+        const container = document.getElementById('editionsList');
+        
+        if (editions.length === 0) {
+            container.innerHTML = '<p>No editions uploaded yet.</p>';
+            return;
+        }
+        
+        container.innerHTML = editions.map(edition => `
+            <div class="edition-card">
+                <h3>${edition.title}</h3>
+                <p><strong>Date:</strong> ${formatDateForDisplay(edition.date)}</p>
+                <p><strong>Uploaded By:</strong> ${edition.uploadedBy || 'Unknown'}</p>
+                <p><strong>File:</strong> ${edition.pdf}</p>
+                <div>
+                    <a href="/uploads/${edition.pdf}" target="_blank" style="color: #b30000; text-decoration: none;">📥 View PDF</a>
+                    ${currentUser.role === 'editor' || currentUser.role === 'admin' ? `
+                        <button onclick="showAreaMappingModal(${edition.id}, ${JSON.stringify(edition.images || []).replace(/"/g, '&quot;')}, ${JSON.stringify(edition.areas || {}).replace(/"/g, '&quot;')})" class="secondary" style="width: auto;">🗺️ Map Areas</button>
+                        <button onclick="showEditEditionModal(${edition.id}, '${edition.title.replace(/'/g, "\\'")}', '${edition.date}')" class="secondary" style="width: auto;">✏️ Edit</button>
+                        <button onclick="deleteEdition(${edition.id})" class="danger" style="width: auto;">🗑️ Delete</button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(err => {
+        console.error('Error loading editions:', err);
+        document.getElementById('editionsList').innerHTML = '<p style="color: red;">Error loading editions</p>';
+    });
+}
+
+function upload() {
+    const title = document.getElementById('title').value.trim();
+    const date = document.getElementById('date').value;
+    const fileInput = document.getElementById('pdf');
+    
+    if (!title || !date || !fileInput.files[0]) {
+        alert('Please fill all fields');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('date', date);
+    formData.append('pdf', fileInput.files[0]);
+    
+    const statusDiv = document.getElementById('uploadStatus');
+    statusDiv.innerHTML = '<p>Uploading...</p>';
+    
+    fetch('/upload', {
+        method: 'POST',
+        headers: { 'Authorization': token },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message.includes('successfully')) {
+            statusDiv.innerHTML = `<p class="status-msg status-success">${data.message}</p>`;
+            document.getElementById('title').value = '';
+            document.getElementById('date').value = '';
+            document.getElementById('pdf').value = '';
+            loadEditions();
+        } else {
+            statusDiv.innerHTML = `<p class="status-msg status-error">Error: ${data.message}</p>`;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        statusDiv.innerHTML = '<p class="status-msg status-error">Upload failed</p>';
+    });
+}
+
+function showEditEditionModal(id, title, date) {
+    currentEditionId = id;
+    document.getElementById('modalEditionTitle').value = title;
+    document.getElementById('modalEditionDate').value = formatDateForInput(date);
+    document.getElementById('editionModal').classList.add('show');
+}
+
+function closeEditionModal() {
+    document.getElementById('editionModal').classList.remove('show');
+    currentEditionId = null;
+}
+
+function updateEdition() {
+    const title = document.getElementById('modalEditionTitle').value.trim();
+    const date = document.getElementById('modalEditionDate').value;
+    
+    if (!title || !date) {
+        alert('Please fill all fields');
+        return;
+    }
+    
+    fetch(`/editions/${currentEditionId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title, date })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        closeEditionModal();
+        loadEditions();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Update failed');
+    });
+}
+
+function reconvertImages() {
+    if (!confirm('This will re-convert the PDF to images. Existing images will be deleted. Continue?')) return;
+    
+    fetch(`/editions/${currentEditionId}/reconvert`, {
+        method: 'POST',
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.images) {
+            // Update the modal or reload
+            closeEditionModal();
+            loadEditions();
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Re-conversion failed');
+    });
+}
+
+function deleteEdition(id) {
+    if (!confirm('Are you sure you want to delete this edition?')) return;
+    
+    fetch(`/editions/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        loadEditions();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Delete failed');
+    });
+}
+
+function loadUsers() {
+    if (currentUser.role !== 'admin') return;
+    
+    fetch('/users', {
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(users => {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = users.map(user => `
+            <tr>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td><span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></td>
+                <td>${user.createdAt}</td>
+                <td>
+                    <button onclick="showEditUserModal(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${user.email}', '${user.role}')" class="secondary" style="width: auto; margin: 2px;">✏️ Edit</button>
+                    <button onclick="deleteUser(${user.id})" class="danger" style="width: auto; margin: 2px;">🗑️ Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    })
+    .catch(err => {
+        console.error('Error loading users:', err);
+        alert('Error loading users');
+    });
+}
+
+function showAddUserModal() {
+    currentUserId = null;
+    document.getElementById('userModalTitle').textContent = 'Add New User';
+    document.getElementById('modalUserName').value = '';
+    document.getElementById('modalUserEmail').value = '';
+    document.getElementById('modalUserPassword').value = '';
+    document.getElementById('modalUserRole').value = 'author';
+    document.getElementById('userModal').classList.add('show');
+}
+
+function showEditUserModal(id, name, email, role) {
+    currentUserId = id;
+    document.getElementById('userModalTitle').textContent = 'Edit User';
+    document.getElementById('modalUserName').value = name;
+    document.getElementById('modalUserEmail').value = email;
+    document.getElementById('modalUserPassword').value = '';
+    document.getElementById('modalUserRole').value = role;
+    document.getElementById('userModal').classList.add('show');
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').classList.remove('show');
+    currentUserId = null;
+}
+
+function saveUser() {
+    const name = document.getElementById('modalUserName').value.trim();
+    const email = document.getElementById('modalUserEmail').value.trim();
+    const password = document.getElementById('modalUserPassword').value;
+    const role = document.getElementById('modalUserRole').value;
+    
+    if (!name || !email || !role) {
+        alert('Please fill required fields');
+        return;
+    }
+    
+    if (currentUserId === null && !password) {
+        alert('Password is required for new user');
+        return;
+    }
+    
+    const url = currentUserId === null ? '/users' : `/users/${currentUserId}`;
+    const method = currentUserId === null ? 'POST' : 'PUT';
+    
+    const payload = { name, email, role };
+    if (password) payload.password = password;
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        closeUserModal();
+        loadUsers();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error saving user');
+    });
+}
+
+function deleteUser(id) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    fetch(`/users/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        loadUsers();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Delete failed');
+    });
+}
+
+function logout() {
+    localStorage.removeItem("adminToken");
+    location.reload();
+}
+
+function togglePasswordVisibility(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+    }
+}
+
+function setupPasswordToggle() {
+    console.log("setupPasswordToggle called");
+    const toggleBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    console.log("toggleBtn:", toggleBtn);
+    console.log("passwordInput:", passwordInput);
+    
+    if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', function(e) {
+            console.log("Eye button clicked");
+            e.preventDefault();
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        });
+    }
+}
+
+function setupEnterKey() {
+    console.log("setupEnterKey called");
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    
+    if (emailInput) {
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    }
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const userModal = document.getElementById('userModal');
+    const editionModal = document.getElementById('editionModal');
+    
+    if (event.target === userModal) {
+        closeUserModal();
+    }
+    if (event.target === editionModal) {
+        closeEditionModal();
+    }
+}
+
+// Area Mapping Variables
+let mappingEditionId = null;
+let mappingImages = [];
+let mappingAreas = {};
+let currentMappingPage = 0;
+let isDrawing = false;
+let startX, startY, endX, endY;
+let tempRect = null;
+let zoomLevel = 1;
+
+function showAreaMappingModal(id, images, areas) {
+    if (!images || images.length === 0) {
+        alert('No images available for this edition. Please re-convert the PDF to images first.');
+        return;
+    }
+    mappingEditionId = id;
+    mappingImages = images;
+    mappingAreas = areas || {};
+    currentMappingPage = 0;
+    showMappingPage();
+    document.getElementById('areaMappingModal').classList.add('show');
+}
+
+function closeAreaMappingModal() {
+    document.getElementById('areaMappingModal').classList.remove('show');
+    mappingEditionId = null;
+    mappingImages = [];
+    mappingAreas = {};
+    currentMappingPage = 0;
+}
+
+function showMappingPage() {
+    const img = document.getElementById('mappingImage');
+    img.src = '/uploads/' + mappingImages[currentMappingPage];
+    zoomLevel = 1;
+    updateZoom();
+    img.onload = function() {
+        drawAreas();
+    };
+    document.getElementById('pageInfo').textContent = `Page ${currentMappingPage + 1} of ${mappingImages.length}`;
+    document.getElementById('prevBtn').disabled = currentMappingPage === 0;
+    document.getElementById('nextBtn').disabled = currentMappingPage === mappingImages.length - 1;
+    updateAreasList();
+}
+
+function prevMappingPage() {
+    if (currentMappingPage > 0) {
+        currentMappingPage--;
+        showMappingPage();
+    }
+}
+
+function nextMappingPage() {
+    if (currentMappingPage < mappingImages.length - 1) {
+        currentMappingPage++;
+        showMappingPage();
+    }
+}
+
+function startDrawing() {
+    isDrawing = true;
+    const img = document.getElementById('mappingImage');
+    const overlay = document.getElementById('areaOverlay');
+    overlay.innerHTML = '';
+    img.addEventListener('mousedown', startDraw);
+    img.addEventListener('mousemove', draw);
+    img.addEventListener('mouseup', endDraw);
+}
+
+function startDraw(e) {
+    if (!isDrawing) return;
+    const rect = e.target.getBoundingClientRect();
+    startX = (e.clientX - rect.left) / zoomLevel;
+    startY = (e.clientY - rect.top) / zoomLevel;
+}
+
+function draw(e) {
+    if (!isDrawing || startX === undefined) return;
+    const rect = e.target.getBoundingClientRect();
+    endX = (e.clientX - rect.left) / zoomLevel;
+    endY = (e.clientY - rect.top) / zoomLevel;
+    
+    const overlay = document.getElementById('areaOverlay');
+    if (tempRect) overlay.removeChild(tempRect);
+    tempRect = document.createElement('div');
+    tempRect.style.position = 'absolute';
+    tempRect.style.left = Math.min(startX, endX) * zoomLevel + 'px';
+    tempRect.style.top = Math.min(startY, endY) * zoomLevel + 'px';
+    tempRect.style.width = Math.abs(endX - startX) * zoomLevel + 'px';
+    tempRect.style.height = Math.abs(endY - startY) * zoomLevel + 'px';
+    tempRect.style.border = '2px solid red';
+    tempRect.style.background = 'rgba(255,0,0,0.3)';
+    overlay.appendChild(tempRect);
+}
+
+function endDraw(e) {
+    if (!isDrawing) return;
+    isDrawing = false;
+    const img = document.getElementById('mappingImage');
+    img.removeEventListener('mousedown', startDraw);
+    img.removeEventListener('mousemove', draw);
+    img.removeEventListener('mouseup', endDraw);
+    
+    const coords = `${Math.min(startX, endX)},${Math.min(startY, endY)},${Math.max(startX, endX)},${Math.max(startY, endY)}`;
+    const newsId = prompt('Enter news ID (e.g., news1):');
+    if (!newsId) return;
+    const part = parseInt(prompt('Enter part number (1,2,3...):'));
+    if (!part || isNaN(part)) return;
+    
+    if (!mappingAreas[currentMappingPage]) mappingAreas[currentMappingPage] = [];
+    mappingAreas[currentMappingPage].push({ coords, newsId, part });
+    drawAreas();
+    updateAreasList();
+    
+    // Ask for next part
+    const nextPage = prompt('Mark next part? Enter page number (1-based) or cancel:');
+    if (nextPage && !isNaN(nextPage)) {
+        currentMappingPage = parseInt(nextPage) - 1;
+        showMappingPage();
+    }
+    
+    tempRect = null;
+    startX = startY = endX = endY = undefined;
+}
+
+function drawAreas() {
+    const overlay = document.getElementById('areaOverlay');
+    overlay.innerHTML = '';
+    const areas = mappingAreas[currentMappingPage] || [];
+    areas.forEach((area, index) => {
+        const [left, top, right, bottom] = area.coords.split(',').map(Number);
+        const div = document.createElement('div');
+        div.style.position = 'absolute';
+        div.style.left = left * zoomLevel + 'px';
+        div.style.top = top * zoomLevel + 'px';
+        div.style.width = (right - left) * zoomLevel + 'px';
+        div.style.height = (bottom - top) * zoomLevel + 'px';
+        div.style.border = '2px solid blue';
+        div.style.background = 'rgba(0,0,255,0.3)';
+        div.title = `News: ${area.newsId}, Part: ${area.part}`;
+        overlay.appendChild(div);
+    });
+}
+
+function updateAreasList() {
+    const list = document.getElementById('areasList');
+    const areas = mappingAreas[currentMappingPage] || [];
+    list.innerHTML = '<h4>Areas on this page:</h4>' + areas.map((area, index) => 
+        `<div>Area ${index + 1}: ${area.coords} → News: ${area.newsId}, Part: ${area.part} <button onclick="deleteArea(${index})">Delete</button></div>`
+    ).join('');
+}
+
+function zoomIn() {
+    zoomLevel = Math.min(zoomLevel + 0.25, 3);
+    updateZoom();
+}
+
+function zoomOut() {
+    zoomLevel = Math.max(zoomLevel - 0.25, 0.5);
+    updateZoom();
+}
+
+function updateZoom() {
+    const img = document.getElementById('mappingImage');
+    img.style.transform = `scale(${zoomLevel})`;
+    img.style.transformOrigin = 'top left';
+    drawAreas();
+}
+
+function saveAreas() {
+    fetch(`/editions/${mappingEditionId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ areas: mappingAreas })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        closeAreaMappingModal();
+        loadEditions();
+    });
+}
+
+// Branding functions
+function loadBranding() {
+    fetch('/branding', {
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        // Update logo status
+        const logoStatus = document.getElementById('logoStatus');
+        const logoPreview = document.getElementById('logoPreview');
+        if (data.logo) {
+            logoStatus.textContent = 'Logo uploaded';
+            logoPreview.src = '/uploads/' + data.logo;
+            logoPreview.style.display = 'block';
+        } else {
+            logoStatus.textContent = 'No logo uploaded';
+            logoPreview.style.display = 'none';
+        }
+        
+        // Update favicon status
+        const faviconStatus = document.getElementById('faviconStatus');
+        const faviconPreview = document.getElementById('faviconPreview');
+        if (data.favicon) {
+            faviconStatus.textContent = 'Favicon uploaded';
+            faviconPreview.src = '/uploads/' + data.favicon;
+            faviconPreview.style.display = 'block';
+        } else {
+            faviconStatus.textContent = 'No favicon uploaded';
+            faviconPreview.style.display = 'none';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading branding:', err);
+    });
+}
+
+function uploadLogo() {
+    const fileInput = document.getElementById('logoFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a logo file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    const statusDiv = document.getElementById('logoStatusMsg');
+    statusDiv.innerHTML = '<p>Uploading logo...</p>';
+    
+    fetch('/branding/logo', {
+        method: 'POST',
+        headers: { 'Authorization': token },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message.includes('successfully')) {
+            statusDiv.innerHTML = `<p class="status-msg status-success">${data.message}</p>`;
+            fileInput.value = '';
+            loadBranding();
+        } else {
+            statusDiv.innerHTML = `<p class="status-msg status-error">Error: ${data.message}</p>`;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        statusDiv.innerHTML = '<p class="status-msg status-error">Upload failed</p>';
+    });
+}
+
+function removeLogo() {
+    if (!confirm('Are you sure you want to remove the logo?')) return;
+    
+    const statusDiv = document.getElementById('logoStatusMsg');
+    statusDiv.innerHTML = '<p>Removing logo...</p>';
+    
+    fetch('/branding/logo', {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        statusDiv.innerHTML = `<p class="status-msg status-success">${data.message}</p>`;
+        loadBranding();
+    })
+    .catch(err => {
+        console.error(err);
+        statusDiv.innerHTML = '<p class="status-msg status-error">Removal failed</p>';
+    });
+}
+
+function uploadFavicon() {
+    const fileInput = document.getElementById('faviconFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a favicon file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('favicon', file);
+    
+    const statusDiv = document.getElementById('faviconStatusMsg');
+    statusDiv.innerHTML = '<p>Uploading favicon...</p>';
+    
+    fetch('/branding/favicon', {
+        method: 'POST',
+        headers: { 'Authorization': token },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message.includes('successfully')) {
+            statusDiv.innerHTML = `<p class="status-msg status-success">${data.message}</p>`;
+            fileInput.value = '';
+            loadBranding();
+        } else {
+            statusDiv.innerHTML = `<p class="status-msg status-error">Error: ${data.message}</p>`;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        statusDiv.innerHTML = '<p class="status-msg status-error">Upload failed</p>';
+    });
+}
+
+function removeFavicon() {
+    if (!confirm('Are you sure you want to remove the favicon?')) return;
+    
+    const statusDiv = document.getElementById('faviconStatusMsg');
+    statusDiv.innerHTML = '<p>Removing favicon...</p>';
+    
+    fetch('/branding/favicon', {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        statusDiv.innerHTML = `<p class="status-msg status-success">${data.message}</p>`;
+        loadBranding();
+    })
+    .catch(err => {
+        console.error(err);
+        statusDiv.innerHTML = '<p class="status-msg status-error">Removal failed</p>';
+    });
+}
+
+// Load branding (logo and favicon) on page load
+fetch('/branding')
+.then(res => res.json())
+.then(data => {
+    const logoImg = document.getElementById('siteLogo');
+    const faviconLink = document.getElementById('faviconLink');
+    
+    if (data.logo) {
+        logoImg.src = '/uploads/' + data.logo;
+    }
+    
+    if (data.favicon) {
+        faviconLink.href = '/uploads/' + data.favicon;
+    }
+})
+.catch(err => {
+    console.error('Error loading branding:', err);
+});
+
+// Initialize on page load
+console.log("=========== PAGE LOADED ===========");
+console.log("setupPasswordToggle function exists:", typeof setupPasswordToggle);
+console.log("setupEnterKey function exists:", typeof setupEnterKey);
+console.log("login function exists:", typeof login);
+console.log("togglePasswordVisibility function exists:", typeof togglePasswordVisibility);
+
+if (token) {
+    console.log("Token found, loading dashboard");
+    loadDashboard();
+} else {
+    console.log("No token, showing login form");
+}
+setupPasswordToggle();
+setupEnterKey();
+console.log("Initialization complete");
+alert("Admin panel loaded! You can now log in.");
+</script>
+
+</body>
+</html>

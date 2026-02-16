@@ -1,0 +1,26 @@
+{
+  "name": "barakbani-epaper",
+  "version": "1.0.0",
+  "description": "Epaper CMS - Newspaper Digital Edition Management System",
+  "main": "server.js",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required for Node.js'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": ["epaper", "cms", "newspaper", "digital", "express"],
+  "author": "Barakbani Epaper Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2"
+  }
+}

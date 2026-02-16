@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Archive</title>
+<link rel="stylesheet" href="style.css">
+<link id="faviconLink" rel="icon" type="image/x-icon" href="">
+</head>
+<body>
+
+<header>
+  <img id="siteLogo" src="logo.png" alt="Barak Bani Logo" style="height: 50px; margin-right: 20px;">
+  Archive
+</header>
+<nav>
+<a href="/">Home</a>
+</nav>
+
+<div class="filter">
+    <label for="dateFilter">Filter by Date:</label>
+    <input type="date" id="dateFilter">
+    <button id="clearFilter">Clear Filter</button>
+</div>
+
+<ul id="list"></ul>
+
+<script>
+let allData = [];
+
+// Helper functions for date conversion
+function formatDateForDisplay(dateStr) {
+    // Convert DD/MM/YYYY to readable format
+    const [day, month, year] = dateStr.split('/');
+    const date = new Date(year, month - 1, day);
+    return date.toDateString();
+}
+
+function convertToDDMMYYYY(dateStr) {
+    // Convert YYYY-MM-DD to DD/MM/YYYY
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+}
+
+fetch('/archive')
+.then(res=>res.json())
+.then(data=>{
+    allData = data;
+    displayList(data);
+});
+
+function displayList(data) {
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+    data.forEach(e=>{
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="/uploads/${e.pdf}" target="_blank">${formatDateForDisplay(e.date)}</a>`;
+        list.appendChild(li);
+    });
+}
+
+document.getElementById('dateFilter').addEventListener('change', function() {
+    const selectedDate = this.value;
+    if (selectedDate) {
+        const formattedDate = convertToDDMMYYYY(selectedDate);
+        const filtered = allData.filter(e => e.date === formattedDate);
+        displayList(filtered);
+    } else {
+        displayList(allData);
+    }
+});
+
+document.getElementById('clearFilter').addEventListener('click', function() {
+    document.getElementById('dateFilter').value = '';
+    displayList(allData);
+});
+
+// Load branding (logo and favicon)
+fetch('/branding')
+.then(res => res.json())
+.then(data => {
+    const logoImg = document.getElementById('siteLogo');
+    const faviconLink = document.getElementById('faviconLink');
+    
+    if (data.logo) {
+        logoImg.src = '/uploads/' + data.logo;
+    }
+    
+    if (data.favicon) {
+        faviconLink.href = '/uploads/' + data.favicon;
+    }
+})
+.catch(err => {
+    console.error('Error loading branding:', err);
+});
+</script>
+
+</body>
+</html>

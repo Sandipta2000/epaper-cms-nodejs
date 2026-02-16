@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Admin",
+    "email": "admin@gmail.com",
+    "password": "$2b$10$TL2ogA8NTfoYTACyncAy2e3zeRKqo9EHeyPrb9hixl2GlYhN1U4nK",
+    "role": "admin",
+    "createdAt": "2026-02-13"
+  },
+  {
+    "id": 2,
+    "name": "Sandipta",
+    "email": "haldersandipta1@gmail.com",
+    "password": "$2b$10$9ZsptQo1auxbCV84.r8dTOC/qiE0o.pHQaYv.PUerUxedxouDx2Zu",
+    "role": "editor",
+    "createdAt": "2026-02-13"
+  },
+  {
+    "id": 3,
+    "name": "Nikhil Das",
+    "email": "Barakbani@gmail.com",
+    "password": "$2b$10$PiokkItyUGj.Q52QL4lzcu56478gej4MFDeiLEjb4B.vmOWOtBFTK",
+    "role": "author",
+    "createdAt": "2026-02-15"
+  }
+]
