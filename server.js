@@ -193,68 +193,86 @@ app.delete('/editions/:id', authenticate, authorize(['editor', 'admin']), (req, 
 
 
 /* ---------- UPLOAD PDF (Protected) ---------- */
-app.post('/upload', authenticate, upload.single('pdf'), (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+app.post('/upload', authenticate, (req, res, next) => {
+    upload.single('pdf')(req, res, function (err) {
+        if (err) {
+            console.error('Multer error:', err);
+            return res.status(500).json({ message: 'File upload error', error: err.message });
+        }
+        if (!req.file) {
+            console.error('No file uploaded');
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
 
-    const { title, date } = req.body;
-    let epapers = [];
+        // Check if pdftoppm is installed
+        try {
+            execSync('which pdftoppm');
+        } catch (pdftoppmErr) {
+            console.error('pdftoppm not found:', pdftoppmErr);
+            return res.status(500).json({ message: 'pdftoppm utility not found. Please install poppler-utils.' });
+        }
 
-    if (fs.existsSync(epapersFile)) {
-        const fileData = fs.readFileSync(epapersFile, 'utf8');
-        epapers = fileData ? JSON.parse(fileData) : [];
-    }
+        const { title, date } = req.body;
+        let epapers = [];
 
-    const id = epapers.length ? epapers[epapers.length - 1].id + 1 : 1;
-    const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
-    const baseName = path.basename(req.file.filename, '.pdf');
-    const outputDir = path.join(__dirname, 'uploads');
+        if (fs.existsSync(epapersFile)) {
+            const fileData = fs.readFileSync(epapersFile, 'utf8');
+            epapers = fileData ? JSON.parse(fileData) : [];
+        }
 
-    try {
-        // Convert PDF to PNG images using pdftoppm
-        execSync(`pdftoppm "${pdfPath}" "${path.join(outputDir, baseName)}" -png`, { 
-            stdio: 'pipe',
-            maxBuffer: 10 * 1024 * 1024
-        });
+        const id = epapers.length ? epapers[epapers.length - 1].id + 1 : 1;
+        const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
+        const baseName = path.basename(req.file.filename, '.pdf');
+        const outputDir = path.join(__dirname, 'uploads');
 
-        // Collect all generated image files
-        const imageFiles = fs.readdirSync(outputDir)
-            .filter(f => f.startsWith(baseName) && f.endsWith('.png'))
-            .sort((a, b) => {
-                const aNum = parseInt(a.match(/\d+/)[0]) || 0;
-                const bNum = parseInt(b.match(/\d+/)[0]) || 0;
-                return aNum - bNum;
+        try {
+            // Convert PDF to PNG images using pdftoppm
+            execSync(`pdftoppm "${pdfPath}" "${path.join(outputDir, baseName)}" -png`, { 
+                stdio: 'pipe',
+                maxBuffer: 10 * 1024 * 1024
             });
 
-        if (imageFiles.length === 0) {
+            // Collect all generated image files
+            const imageFiles = fs.readdirSync(outputDir)
+                .filter(f => f.startsWith(baseName) && f.endsWith('.png'))
+                .sort((a, b) => {
+                    const aNum = parseInt(a.match(/\d+/)[0]) || 0;
+                    const bNum = parseInt(b.match(/\d+/)[0]) || 0;
+                    return aNum - bNum;
+                });
+
+            if (imageFiles.length === 0) {
+                // Delete the uploaded PDF if conversion failed
+                fs.unlinkSync(pdfPath);
+                console.error('PDF conversion failed. No images generated.');
+                return res.status(500).json({ message: 'PDF conversion failed. No images generated. Please check the PDF file.' });
+            }
+
+            // Convert date from YYYY-MM-DD to DD/MM/YYYY
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}/${month}/${year}`;
+
+            epapers.push({
+                id,
+                title,
+                date: formattedDate,
+                pdf: req.file.filename,
+                images: imageFiles,
+                uploadedBy: req.user.name || 'User',
+                uploadedAt: new Date().toISOString()
+            });
+
+            fs.writeFileSync(epapersFile, JSON.stringify(epapers, null, 2));
+            res.json({ message: 'Epaper uploaded successfully!', images: imageFiles });
+        } catch (err) {
+            console.error('PDF conversion error:', err);
             // Delete the uploaded PDF if conversion failed
-            fs.unlinkSync(pdfPath);
-            return res.status(500).json({ message: 'PDF conversion failed. No images generated. Please check the PDF file.' });
+            if (fs.existsSync(pdfPath)) {
+                fs.unlinkSync(pdfPath);
+            }
+            return res.status(500).json({ message: 'PDF conversion failed. Please check the PDF file and try again.', error: err.message });
         }
-
-        // Convert date from YYYY-MM-DD to DD/MM/YYYY
-        const [year, month, day] = date.split('-');
-        const formattedDate = `${day}/${month}/${year}`;
-
-        epapers.push({
-            id,
-            title,
-            date: formattedDate,
-            pdf: req.file.filename,
-            images: imageFiles,
-            uploadedBy: req.user.name || 'User',
-            uploadedAt: new Date().toISOString()
-        });
-
-        fs.writeFileSync(epapersFile, JSON.stringify(epapers, null, 2));
-        res.json({ message: 'Epaper uploaded successfully!', images: imageFiles });
-    } catch (err) {
-        console.error('PDF conversion error:', err);
-        // Delete the uploaded PDF if conversion failed
-        if (fs.existsSync(pdfPath)) {
-            fs.unlinkSync(pdfPath);
-        }
-        return res.status(500).json({ message: 'PDF conversion failed. Please check the PDF file and try again.' });
-    }
+    });
 });
 
 /* ---------- GET ALL USERS (Admin only) ---------- */
