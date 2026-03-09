@@ -83,7 +83,7 @@
         <label>Password:</label>
         <div class="password-container">
             <input id="password" type="password" placeholder="Enter your password">
-            <button type="button" id="togglePassword" onclick="togglePasswordVisibility()">👁️</button>
+            <button type="button" id="togglePassword" onclick="togglePasswordVisibility(event)">👁️</button>
         </div>
     </div>
     <button onclick="login()" style="width: 100%;">Login</button>
@@ -653,29 +653,6 @@ function togglePasswordVisibility(event) {
     }
 }
 
-function setupPasswordToggle() {
-    console.log("setupPasswordToggle called");
-    const toggleBtn = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    
-    console.log("toggleBtn:", toggleBtn);
-    console.log("passwordInput:", passwordInput);
-    
-    if (toggleBtn && passwordInput) {
-        toggleBtn.addEventListener('click', function(e) {
-            console.log("Eye button clicked");
-            e.preventDefault();
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleBtn.textContent = '🙈';
-            } else {
-                passwordInput.type = 'password';
-                toggleBtn.textContent = '👁️';
-            }
-        });
-    }
-}
-
 function setupEnterKey() {
     console.log("setupEnterKey called");
     const emailInput = document.getElementById('email');
@@ -1068,7 +1045,6 @@ fetch('/branding')
 
 // Initialize on page load
 console.log("=========== PAGE LOADED ===========");
-console.log("setupPasswordToggle function exists:", typeof setupPasswordToggle);
 console.log("setupEnterKey function exists:", typeof setupEnterKey);
 console.log("login function exists:", typeof login);
 console.log("togglePasswordVisibility function exists:", typeof togglePasswordVisibility);
@@ -1079,10 +1055,8 @@ if (token) {
 } else {
     console.log("No token, showing login form");
 }
-setupPasswordToggle();
 setupEnterKey();
 console.log("Initialization complete");
-alert("Admin panel loaded! You can now log in.");
 </script>
 
 </body>

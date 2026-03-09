@@ -12,11 +12,12 @@
 </header>
 
 
-<nav>
+<nav style="display: flex; justify-content: center; align-items: center; position: relative;">
+<div style="display: flex; gap: 30px; align-items: center;">
 <a href="/">Home</a>
 <a href="archive.html">Archive</a>
-<a href="admin.html">Admin</a>
-<div style="float: right; margin-top: 5px;">
+</div>
+<div style="position: absolute; right: 10px; display: flex; align-items: center; gap: 8px;">
     <input type="date" id="datePicker" onchange="loadDate(this.value)" style="padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
     <button onclick="loadToday()" style="padding: 5px 10px; background: #b30000; color: white; border: none; border-radius: 3px; cursor: pointer;">Today</button>
 </div>
