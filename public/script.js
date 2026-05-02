@@ -1,8 +1,14 @@
-fetch('/latest')
+const sharedDate = window.__SHARED_DATE__;
+const initialEndpoint = sharedDate ? '/epaper?date=' + encodeURIComponent(sharedDate) : '/latest';
+
+fetch(initialEndpoint)
   .then(res => res.json())
   .then(data => {
     currentEpaper = data;
     showAllPages();
+    if (sharedDate) {
+      document.getElementById('datePicker').value = sharedDate;
+    }
   })
   .catch(err => {
     console.error("Error loading latest epaper:", err);
