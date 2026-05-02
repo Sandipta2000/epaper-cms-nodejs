@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000; // Use Render's PORT environment variable
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public', { index: false }));
 app.use('/uploads', express.static('uploads'));
 
 const usersFile = './users.json';
@@ -31,6 +31,57 @@ function convertToDDMMYYYY(dateStr) {
   const [year, month, day] = dateStr.split('-');
   return `${day}/${month}/${year}`;
 }
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getEpaperByYYYYMMDD(dateStr) {
+    if (!dateStr || !fs.existsSync(epapersFile)) return null;
+    const epapers = JSON.parse(fs.readFileSync(epapersFile, 'utf8'));
+    const formattedDate = convertToDDMMYYYY(dateStr);
+    return epapers.find(e => e.date === formattedDate) || null;
+}
+
+app.get('/', (req, res) => {
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    let html = fs.readFileSync(indexPath, 'utf8');
+    const requestedDate = req.query.date;
+    const epaper = getEpaperByYYYYMMDD(requestedDate);
+    const firstImage = epaper && epaper.images && epaper.images.length > 0 ? epaper.images[0] : null;
+    const title = epaper ? `${epaper.title} - ${epaper.date}` : 'Barak Bani Epaper';
+    const description = epaper ? `Read ${epaper.title} for ${epaper.date}` : 'Read Barak Bani Epaper online';
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const shareUrl = requestedDate ? `${origin}/?date=${encodeURIComponent(requestedDate)}` : `${origin}/`;
+    const imageUrl = firstImage ? `${origin}/uploads/${encodeURIComponent(firstImage)}` : null;
+
+    const socialMeta = [
+        `<meta property="og:type" content="website">`,
+        `<meta property="og:title" content="${escapeHtml(title)}">`,
+        `<meta property="og:description" content="${escapeHtml(description)}">`,
+        `<meta property="og:url" content="${escapeHtml(shareUrl)}">`,
+        imageUrl ? `<meta property="og:image" content="${escapeHtml(imageUrl)}">` : '',
+        `<meta name="twitter:card" content="summary_large_image">`,
+        `<meta name="twitter:title" content="${escapeHtml(title)}">`,
+        `<meta name="twitter:description" content="${escapeHtml(description)}">`,
+        imageUrl ? `<meta name="twitter:image" content="${escapeHtml(imageUrl)}">` : ''
+    ].filter(Boolean).join('\n');
+
+    html = html.replace('</head>', `${socialMeta}\n</head>`);
+    html = html.replace('<title>Barak Bani Epaper</title>', `<title>${escapeHtml(title)}</title>`);
+
+    if (requestedDate) {
+        const dateScript = `<script>window.__SHARED_DATE__ = "${escapeHtml(requestedDate)}";</script>`;
+        html = html.replace('<script src="script.js"></script>', `${dateScript}\n<script src="script.js"></script>`);
+    }
+
+    res.send(html);
+});
 
 // Ensure the uploads folder exists
 if (!fs.existsSync('./uploads')) {
